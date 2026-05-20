@@ -1550,10 +1550,10 @@ function handleTap(cx,cy) {
   }
 }
 
-let lastTouchY=0, touchStartY=0, isTap=true
+let lastTouchY=0, touchStartY=0, isTap=true, lastTouchHandled=false
 
 canvas.addEventListener('touchstart', e=>{
-  lastTouchY=e.touches[0].clientY; touchStartY=lastTouchY; isTap=true
+  lastTouchY=e.touches[0].clientY; touchStartY=lastTouchY; isTap=true; lastTouchHandled=false
 }, {passive:true})
 
 canvas.addEventListener('touchmove', e=>{
@@ -1569,6 +1569,7 @@ canvas.addEventListener('touchmove', e=>{
 
 canvas.addEventListener('touchend', e=>{
   if (!isTap) return
+  lastTouchHandled=true
   const rect=canvas.getBoundingClientRect()
   const ratio=canvas.clientHeight>0?H/canvas.clientHeight:1
   const t=e.changedTouches[0]
@@ -1576,6 +1577,7 @@ canvas.addEventListener('touchend', e=>{
 }, {passive:true})
 
 canvas.addEventListener('click', e=>{
+  if (lastTouchHandled) { lastTouchHandled=false; return }
   const rect=canvas.getBoundingClientRect()
   const ratio=canvas.clientHeight>0?H/canvas.clientHeight:1
   handleTap((e.clientX-rect.left)*ratio, (e.clientY-rect.top)*ratio)
