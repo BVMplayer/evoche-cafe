@@ -1477,8 +1477,7 @@ function handleTap(cx,cy) {
     const def=STATIONS[idx]; if (!def) return
     if (S.totalCovers<def.unlockAt) return
     if (def.id==='marcus' && (S.owned['marcus']??0)>0 && cx<80) { S.showMarcus=true; return }
-    if (def.id==='marcus') setNotif('cx:'+Math.floor(cx))
-    if (def.id==='marcus' && (S.owned['marcus']??0)>0 && cx>=80) {
+if (def.id==='marcus' && (S.owned['marcus']??0)>0 && cx>=80) {
       const cost=stationCost(def,S.owned[def.id]??0)
       if (S.covers>=cost) {
         S.covers-=cost; S.owned[def.id]=(S.owned[def.id]??0)+1
