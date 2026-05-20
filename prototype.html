@@ -424,6 +424,7 @@ function initState(saved={}) {
     newRegular:null, newRegularLife:0,
     showOfflineScreen:false, offlineEarned:0,
     showMarcus:false,
+    showDevScreen:false,
   }, saved)
 }
 
@@ -822,6 +823,7 @@ function draw(now) {
   if (S.prestigeConfirm) drawPrestigeConfirm(p)
   if (S.showOfflineScreen) drawOfflineScreen(p)
   if (S.showMarcus) drawMarcusFullscreen()
+  if (S.showDevScreen) drawDevScreen(p)
 }
 
 function drawHeader(p, shift, now) {
@@ -861,8 +863,26 @@ function drawHeader(p, shift, now) {
 
   // stars display top-left
   if (S.stars > 0 || S.totalStars > 0) {
-    drawText('* '+S.stars, 10, 110, '#ffe066', 1)
+    drawText('* '+S.stars, 10, 108, '#ffe066', 1)
   }
+
+  // version label bottom-left
+  drawText('v1.10.1', 10, 118, p.creamGhost, 1)
+  drawText('The Guy added', 52, 118, p.creamGhost, 1)
+
+  // refresh button (⟳) — bottom-right of header
+  ctx.fillStyle=p.panel+'cc'
+  roundRect(W-52, 108, 22, 15, 3); ctx.fill()
+  ctx.strokeStyle=p.border; ctx.lineWidth=1
+  roundRect(W-52, 108, 22, 15, 3); ctx.stroke()
+  drawText('RLD', W-41, 111, p.creamGhost, 1, 'center')
+
+  // dev button — far bottom-right corner, subtle
+  ctx.fillStyle=p.espresso+'cc'
+  roundRect(W-26, 108, 20, 15, 3); ctx.fill()
+  ctx.strokeStyle=p.border+'88'; ctx.lineWidth=1
+  roundRect(W-26, 108, 20, 15, 3); ctx.stroke()
+  drawText('DEV', W-16, 111, p.creamGhost, 1, 'center')
 }
 
 function drawTabBar(p, shift) {
@@ -1315,6 +1335,38 @@ function drawOfflineScreen(p) {
   ctx.restore()
 }
 
+function drawDevScreen(p) {
+  ctx.save()
+  ctx.fillStyle='rgba(0,0,0,0.82)'; ctx.fillRect(0,0,W,H)
+  const pw=W-60,ph=260,px=30,py=H/2-ph/2
+  ctx.fillStyle=p.panel; roundRect(px,py,pw,ph,10); ctx.fill()
+  ctx.strokeStyle='#ff4444'; ctx.lineWidth=2; roundRect(px,py,pw,ph,10); ctx.stroke()
+  drawText('DEV MODE', W/2, py+14, '#ff4444', 1, 'center')
+  drawText('cheat in covers', W/2, py+28, p.creamGhost, 1, 'center')
+
+  const btns=[
+    {label:'+1K',    amt:1000},
+    {label:'+10K',   amt:10000},
+    {label:'+100K',  amt:100000},
+    {label:'+1M',    amt:1000000},
+    {label:'+10M',   amt:10000000},
+    {label:'+100M',  amt:100000000},
+  ]
+  const bw=90, bh=30, gap=10
+  const cols=2, rows=Math.ceil(btns.length/cols)
+  const gridW=cols*bw+(cols-1)*gap
+  const gx=W/2-gridW/2
+  for (let i=0;i<btns.length;i++) {
+    const col=i%cols, row=Math.floor(i/cols)
+    const bx=gx+col*(bw+gap), by=py+50+row*(bh+gap)
+    ctx.fillStyle='#ff444422'; roundRect(bx,by,bw,bh,5); ctx.fill()
+    ctx.strokeStyle='#ff4444'; ctx.lineWidth=1; roundRect(bx,by,bw,bh,5); ctx.stroke()
+    drawText(btns[i].label, bx+bw/2, by+bh/2-3, '#ff8888', 1, 'center')
+  }
+  drawText('tap outside to close', W/2, py+ph-16, p.creamGhost, 1, 'center')
+  ctx.restore()
+}
+
 function drawPrestigeConfirm(p) {
   ctx.save()
   ctx.fillStyle='rgba(0,0,0,0.75)'; ctx.fillRect(0,0,W,H)
@@ -1342,6 +1394,30 @@ function drawPrestigeConfirm(p) {
 function handleTap(cx,cy) {
   if (S.showMarcus) { S.showMarcus=false; return }
   if (S.showOfflineScreen) { S.showOfflineScreen=false; return }
+  if (S.showDevScreen) {
+    // check button hits inside dev screen
+    const pw=W-60,ph=260,px=30,py=H/2-ph/2
+    const inside=cx>=px&&cx<=px+pw&&cy>=py&&cy<=py+ph
+    if (inside) {
+      const btns=[1000,10000,100000,1000000,10000000,100000000]
+      const bw=90,bh=30,gap=10,cols=2
+      const gridW=cols*bw+(cols-1)*gap
+      const gx=W/2-gridW/2
+      for (let i=0;i<btns.length;i++) {
+        const col=i%cols,row=Math.floor(i/cols)
+        const bx=gx+col*(bw+gap),by=py+50+row*(bh+gap)
+        if (cx>=bx&&cx<=bx+bw&&cy>=by&&cy<=by+bh) {
+          S.covers+=btns[i]; S.totalCovers+=btns[i]
+          checkUnlocks()
+          addToast('+'+formatNum(btns[i]),W/2,H/2,P.gold,2)
+          spawnParticles(W/2,H/2,P.gold,12)
+        }
+      }
+    } else {
+      S.showDevScreen=false
+    }
+    return
+  }
 
   if (S.prestigeConfirm) {
     const ph=220, py=H/2-ph/2-20
@@ -1386,6 +1462,10 @@ function handleTap(cx,cy) {
       if (S.totalCovers>=prestigeThreshold(S.prestige)) S.prestigeConfirm=true
       else setNotif('Need '+formatNum(prestigeThreshold(S.prestige))+' total covers')
     }
+    // refresh button
+    if (cx>=W-52&&cx<=W-30&&cy>=108&&cy<=123) { saveGame(); location.reload(); return }
+    // dev button
+    if (cx>=W-26&&cx<=W-6&&cy>=108&&cy<=123) { S.showDevScreen=true; return }
     return
   }
 

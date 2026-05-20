@@ -1,4 +1,4 @@
-const CACHE = 'evoche-v7'
+const CACHE = 'evoche-v8'
 const FILES = ['/prototype.html', '/icon.png', '/manifest.json', '/sw.js']
 
 self.addEventListener('install', e => {
