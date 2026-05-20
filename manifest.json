@@ -1,0 +1,12 @@
+{
+  "name": "Évoche Café",
+  "short_name": "Évoche",
+  "start_url": "/prototype.html",
+  "display": "standalone",
+  "background_color": "#1a0f08",
+  "theme_color": "#1a0f08",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icon.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
