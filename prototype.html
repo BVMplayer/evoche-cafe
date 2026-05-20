@@ -158,7 +158,8 @@ const STATIONS = [
   { id:'backroom',  name:'The Back Room',       baseCost:100000,  baseRate:250.0, costMult:1.15, flavor:"Nobody asks what's back there.",       unlockAt:50000  },
   { id:'rooftop',   name:'Rooftop Terrace',     baseCost:400000,  baseRate:750.0, costMult:1.15, flavor:'The city spreads out like a receipt.', unlockAt:200000 },
   { id:'private',   name:'Private Dining Room', baseCost:1500000, baseRate:2000.0,costMult:1.15, flavor:'Reserved. Always reserved.',           unlockAt:750000 },
-  { id:'ghost',     name:'Ghost Kitchen',       baseCost:6000000, baseRate:6000.0,costMult:1.15, flavor:'Orders from nowhere. Paid in full.',   unlockAt:3000000},
+  { id:'ghost',     name:'Ghost Kitchen',       baseCost:6000000,  baseRate:6000.0, costMult:1.15, flavor:'Orders from nowhere. Paid in full.',      unlockAt:3000000  },
+  { id:'marcus',   name:'The Guy',             baseCost:25000000, baseRate:15000.0,costMult:1.15, flavor:'He paused his game to be here.',           unlockAt:10000000 },
 ]
 
 const UPGRADES = [
@@ -422,6 +423,7 @@ function initState(saved={}) {
     notif:'', notifLife:0,
     newRegular:null, newRegularLife:0,
     showOfflineScreen:false, offlineEarned:0,
+    showMarcus:false,
   }, saved)
 }
 
@@ -667,6 +669,46 @@ function drawBackRoom(cx,cy) {
   ctx.fillStyle=mg; ctx.fillRect(cx-22,cy-20,44,44)
 }
 
+// preload coworker photo
+const marcusImg = new Image()
+marcusImg.src = 'coworker.jpg'
+
+function drawMarcus(cx,cy) {
+  // draw him as a pixel silhouette with apron
+  ctx.fillStyle = '#1a1a1a'
+  // body
+  ctx.fillRect(cx-10,cy-18,20,22)
+  // head
+  ctx.fillStyle = '#8B5E3C'
+  ctx.beginPath(); ctx.arc(cx,cy-24,9,0,Math.PI*2); ctx.fill()
+  // cap
+  ctx.fillStyle = '#222'
+  ctx.fillRect(cx-10,cy-32,20,5)
+  ctx.fillRect(cx-12,cy-27,24,3)
+  // apron
+  ctx.fillStyle = '#f5e6c8'
+  ctx.fillRect(cx-8,cy-8,16,18)
+  // apron strings
+  ctx.fillStyle = '#e0d0a0'
+  ctx.fillRect(cx-3,cy+10,6,2)
+  // glow outline when affordable
+  ctx.strokeStyle='#ffe066'; ctx.lineWidth=1
+  ctx.strokeRect(cx-12,cy-34,24,38)
+}
+
+function drawMarcusFullscreen() {
+  ctx.save()
+  ctx.fillStyle='rgba(0,0,0,0.95)'; ctx.fillRect(0,0,W,H)
+  if (marcusImg.complete && marcusImg.naturalWidth>0) {
+    const scale = Math.min(W/marcusImg.naturalWidth, (H-80)/marcusImg.naturalHeight)
+    const dw = marcusImg.naturalWidth*scale
+    const dh = marcusImg.naturalHeight*scale
+    ctx.drawImage(marcusImg, W/2-dw/2, 40, dw, dh)
+  }
+  drawText('tap to close', W/2, H-20, '#ffe066', 1, 'center')
+  ctx.restore()
+}
+
 function drawRooftop(cx,cy) {
   // railing
   ctx.fillStyle='#7a4520'
@@ -737,6 +779,7 @@ function drawStation(id,cx,cy,flash=0) {
     case 'rooftop':   drawRooftop(cx,cy); break
     case 'private':   drawPrivateDining(cx,cy); break
     case 'ghost':     drawGhostKitchen(cx,cy); break
+    case 'marcus':    drawMarcus(cx,cy); break
   }
   ctx.restore()
 }
@@ -778,6 +821,7 @@ function draw(now) {
   if (S.newRegular && S.newRegularLife>0) drawRegularPopup(p)
   if (S.prestigeConfirm) drawPrestigeConfirm(p)
   if (S.showOfflineScreen) drawOfflineScreen(p)
+  if (S.showMarcus) drawMarcusFullscreen()
 }
 
 function drawHeader(p, shift, now) {
@@ -1296,6 +1340,7 @@ function drawPrestigeConfirm(p) {
 
 // ─── Input ────────────────────────────────────────────────────────────────────
 function handleTap(cx,cy) {
+  if (S.showMarcus) { S.showMarcus=false; return }
   if (S.showOfflineScreen) { S.showOfflineScreen=false; return }
 
   if (S.prestigeConfirm) {
@@ -1351,6 +1396,7 @@ function handleTap(cx,cy) {
     const rowH=86, idx=Math.floor(relY/rowH)
     const def=STATIONS[idx]; if (!def) return
     if (S.totalCovers<def.unlockAt) return
+    if (def.id==='marcus' && (S.owned['marcus']??0)>0) { S.showMarcus=true; return }
     const cost=stationCost(def,S.owned[def.id]??0)
     if (S.covers>=cost) {
       S.covers-=cost; S.owned[def.id]=(S.owned[def.id]??0)+1
